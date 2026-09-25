@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tic-Tac-Toe Deluxe</title>
+<style>
+:root{
+  --bg:#101522; --panel:#171F33; --cell:#202A43; --cellh:#2B3857;
+  --white:#F5F7FF; --gray:#9CA8C7; --x:#55D6FF; --o:#FF6B9D; --win:#63E6BE;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg)}
+body{
+  font-family:'Segoe UI',system-ui,sans-serif;
+  display:flex;flex-direction:column;align-items:center;
+  padding:20px 16px 30px;color:var(--white);
+}
+h1{font-size:26px;font-weight:800;margin:6px 0 0;letter-spacing:1px}
+.sub{color:var(--x);font-weight:700;font-size:11px;letter-spacing:2px;margin-bottom:14px}
+.score-panel{
+  background:var(--panel);width:100%;max-width:340px;border-radius:10px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 22px;margin-bottom:16px;
+}
+.score{font-size:18px;font-weight:800}
+.score.x{color:var(--x)} .score.o{color:var(--o)}
+.status{font-weight:700;font-size:13px;text-align:center;flex:1}
+.board{display:grid;grid-template-columns:repeat(3,80px);grid-template-rows:repeat(3,80px);gap:6px}
+@media(max-width:380px){.board{grid-template-columns:repeat(3,68px);grid-template-rows:repeat(3,68px)}}
+.cell{
+  background:var(--cell);border:none;border-radius:8px;color:var(--white);
+  font-size:34px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:background .15s;
+}
+.cell:hover:not(:disabled){background:var(--cellh)}
+.cell:disabled{cursor:default}
+.info{color:var(--gray);font-size:12px;margin:14px 0}
+.controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.btn{
+  border:none;border-radius:6px;font-weight:700;font-size:11px;letter-spacing:.5px;
+  padding:10px 16px;cursor:pointer;color:var(--bg);
+}
+.btn.new{background:var(--x)} .btn.reset{background:var(--o)} .btn.settings{background:var(--win)}
+.modal-back{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);
+  align-items:center;justify-content:center;z-index:10;padding:16px;
+}
+.modal-back.open{display:flex}
+.modal{background:var(--panel);border-radius:12px;padding:24px;width:100%;max-width:320px}
+.modal h2{text-align:center;font-size:18px;margin:0 0 18px}
+.modal label{display:block;color:var(--gray);font-size:11px;font-weight:700;margin:12px 0 5px}
+.modal input[type=text]{
+  width:100%;padding:9px 10px;border-radius:6px;border:none;background:var(--cell);
+  color:var(--white);font-size:14px;
+}
+.radio-row{display:flex;gap:14px;font-size:12px}
+.radio-row label{display:flex;align-items:center;gap:5px;color:var(--white);font-weight:400}
+select{
+  width:100%;padding:8px;border-radius:6px;border:none;background:var(--cell);color:var(--white);font-size:13px;
+}
+.apply-btn{
+  width:100%;margin-top:20px;background:var(--x);color:var(--bg);border:none;border-radius:6px;
+  padding:11px;font-weight:800;font-size:12px;cursor:pointer;
+}
+.msg-back{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);
+  align-items:center;justify-content:center;z-index:20;padding:16px;
+}
+.msg-back.open{display:flex}
+.msg-box{background:var(--panel);border-radius:12px;padding:22px;max-width:300px;text-align:center}
+.msg-box p{font-size:14px;margin:0 0 18px}
+.msg-buttons{display:flex;gap:10px;justify-content:center}
+.msg-buttons button{border:none;border-radius:6px;padding:9px 18px;font-weight:700;font-size:12px;cursor:pointer}
+.yes{background:var(--x);color:var(--bg)} .no{background:var(--cell);color:var(--white)}
+</style>
+</head>
+<body>
+<h1>TIC-TAC-TOE</h1>
+<div class="sub">DELUXE</div>
+
+<div class="score-panel">
+  <div class="score x">X</div>
+  <div class="status" id="status">Your Turn</div>
+  <div class="score o">O</div>
+</div>
+
+<div class="board" id="board"></div>
+
+<div class="info" id="info">You are X • First to 3 wins the match</div>
+
+<div class="controls">
+  <button class="btn new" onclick="startRound()">NEW ROUND</button>
+  <button class="btn reset" onclick="askReset()">RESET</button>
+  <button class="btn settings" onclick="openSettings()">SETTINGS</button>
+</div>
+
+<div class="modal-back" id="settingsModal">
+  <div class="modal">
+    <h2>GAME SETTINGS</h2>
+    <label>Player Name</label>
+    <input type="text" id="nameInput">
+    <label>Game Mode</label>
+    <div class="radio-row">
+      <label><input type="radio" name="mode" value="computer"> Vs Computer</label>
+      <label><input type="radio" name="mode" value="two_player"> 2 Players</label>
+    </div>
+    <label>Computer Difficulty</label>
+    <select id="diffSelect">
+      <option>Easy</option><option>Medium</option><option>Hard</option>
+    </select>
+    <button class="apply-btn" onclick="applySettings()">APPLY SETTINGS</button>
+  </div>
+</div>
+
+<div class="msg-back" id="msgModal">
+  <div class="msg-box">
+    <p id="msgText"></p>
+    <div class="msg-buttons">
+      <button class="yes" id="msgYes">Yes</button>
+      <button class="no" id="msgNo">No</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const WIN_LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+let board=Array(9).fill(""), current="X", gameOver=false, thinking=false;
+let xScore=0,oScore=0,draws=0;
+let playerName="Player", mode="computer", difficulty="Medium";
+
+const boardEl=document.getElementById('board');
+const statusEl=document.getElementById('status');
+const infoEl=document.getElementById('info');
+
+for(let i=0;i<9;i++){
+  const b=document.createElement('button');
+  b.className='cell'; b.id='cell'+i;
+  b.onclick=()=>playerMove(i);
+  boardEl.appendChild(b);
+}
+
+function startRound(){
+  board=Array(9).fill(""); current="X"; gameOver=false; thinking=false;
+  for(let i=0;i<9;i++){
+    const c=document.getElementById('cell'+i);
+    c.textContent=""; c.disabled=false; c.style.background="var(--cell)"; c.style.color="var(--white)";
+  }
+  statusEl.textContent = mode==="computer" ? "Your Turn • X" : "Player X's Turn";
+  statusEl.style.color="var(--x)";
+  infoEl.textContent = mode==="computer" ? `You are X • First to 3 wins the match` : "First to 3 wins the match";
+}
+
+function placeMove(i,sym){
+  board[i]=sym;
+  const c=document.getElementById('cell'+i);
+  c.textContent=sym;
+  c.style.color = sym==="X" ? "var(--x)" : "var(--o)";
+  c.disabled=true;
+}
+
+function playerMove(i){
+  if(gameOver||thinking||board[i]!=="") return;
+  placeMove(i,"X");
+  if(checkGameOver("X")) return;
+  if(mode==="computer"){
+    current="O"; thinking=true;
+    statusEl.textContent="Computer Thinking..."; statusEl.style.color="var(--o)";
+    setTimeout(computerMove,500);
+  } else {
+    current="O";
+    statusEl.textContent="Player O's Turn"; statusEl.style.color="var(--o)";
+  }
+}
+
+function computerMove(){
+  if(gameOver) return;
+  const move=getComputerMove();
+  placeMove(move,"O");
+  thinking=false;
+  if(checkGameOver("O")) return;
+  current="X";
+  statusEl.textContent="Your Turn • X"; statusEl.style.color="var(--x)";
+}
+
+function getComputerMove(){
+  const empty=board.map((v,i)=>v===""?i:null).filter(v=>v!==null);
+  if(difficulty==="Easy") return empty[Math.floor(Math.random()*empty.length)];
+  if(difficulty==="Medium"){
+    let m=findWinningMove("O"); if(m!==null) return m;
+    m=findWinningMove("X"); if(m!==null) return m;
+    if(empty.includes(4)) return 4;
+    const corners=[0,2,6,8].filter(i=>empty.includes(i));
+    if(corners.length) return corners[Math.floor(Math.random()*corners.length)];
+    return empty[Math.floor(Math.random()*empty.length)];
+  }
+  // Hard: minimax
+  let best=-1000, bestMoves=[];
+  for(const move of empty){
+    board[move]="O";
+    const score=minimax(false);
+    board[move]="";
+    if(score>best){best=score;bestMoves=[move];}
+    else if(score===best){bestMoves.push(move);}
+  }
+  return bestMoves[Math.floor(Math.random()*bestMoves.length)];
+}
+
+function findWinningMove(sym){
+  for(let i=0;i<9;i++){
+    if(board[i]==="") {
+      board[i]=sym;
+      const win=hasWinner(sym);
+      board[i]="";
+      if(win) return i;
+    }
+  }
+  return null;
+}
+
+function minimax(maximizing){
+  if(hasWinner("O")) return 1;
+  if(hasWinner("X")) return -1;
+  if(!board.includes("")) return 0;
+  const empty=board.map((v,i)=>v===""?i:null).filter(v=>v!==null);
+  if(maximizing){
+    let best=-1000;
+    for(const m of empty){board[m]="O"; best=Math.max(best,minimax(false)); board[m]="";}
+    return best;
+  } else {
+    let best=1000;
+    for(const m of empty){board[m]="X"; best=Math.min(best,minimax(true)); board[m]="";}
+    return best;
+  }
+}
+
+function hasWinner(sym){
+  return WIN_LINES.some(line=>line.every(i=>board[i]===sym));
+}
+function getWinningLine(sym){
+  return WIN_LINES.find(line=>line.every(i=>board[i]===sym))||null;
+}
+
+function checkGameOver(sym){
+  if(hasWinner(sym)){
+    const line=getWinningLine(sym);
+    line.forEach(i=>{
+      const c=document.getElementById('cell'+i);
+      c.style.background="var(--win)"; c.style.color="var(--bg)";
+    });
+    let winner;
+    if(sym==="X"){ xScore++; winner = mode==="computer" ? playerName : "Player X"; }
+    else { oScore++; winner = mode==="computer" ? "Computer" : "Player O"; }
+    gameOver=true;
+    statusEl.textContent=`🏆 ${winner} Wins!`; statusEl.style.color="var(--win)";
+    setTimeout(()=>checkMatch(winner),400);
+    return true;
+  }
+  if(!board.includes("")){
+    draws++; gameOver=true;
+    statusEl.textContent="🤝 DRAW!"; statusEl.style.color="var(--white)";
+    setTimeout(askNextRound,400);
+    return true;
+  }
+  return false;
+}
+
+function checkMatch(winner){
+  if(xScore>=3){
+    const msg = mode==="computer" ? `${playerName} won the match! 🏆` : "Player X won the match! 🏆";
+    showConfirm(msg+"\n\nStart a new match?", ()=>{xScore=0;oScore=0;draws=0;startRound();});
+    return;
+  }
+  if(oScore>=3){
+    const msg = mode==="computer" ? "Computer won the match! 🤖" : "Player O won the match! 🏆";
+    showConfirm(msg+"\n\nStart a new match?", ()=>{xScore=0;oScore=0;draws=0;startRound();});
+    return;
+  }
+  askNextRound();
+}
+
+function askNextRound(){
+  if(!gameOver) return;
+  showConfirm("Play another round?", startRound);
+}
+
+function askReset(){
+  showConfirm("Are you sure you want to reset the entire match?", ()=>{xScore=0;oScore=0;draws=0;startRound();});
+}
+
+function showConfirm(text,onYes){
+  document.getElementById('msgText').textContent=text;
+  const modal=document.getElementById('msgModal');
+  modal.classList.add('open');
+  const yes=document.getElementById('msgYes'), no=document.getElementById('msgNo');
+  const cleanup=()=>{modal.classList.remove('open'); yes.onclick=null; no.onclick=null;};
+  yes.onclick=()=>{cleanup(); onYes();};
+  no.onclick=()=>{cleanup();};
+}
+
+function openSettings(){
+  document.getElementById('nameInput').value=playerName;
+  document.querySelectorAll('input[name=mode]').forEach(r=>r.checked = r.value===mode);
+  document.getElementById('diffSelect').value=difficulty;
+  document.getElementById('settingsModal').classList.add('open');
+}
+
+function applySettings(){
+  const name=document.getElementById('nameInput').value.trim();
+  playerName = name || "Player";
+  mode = document.querySelector('input[name=mode]:checked').value;
+  difficulty = document.getElementById('diffSelect').value;
+  document.getElementById('settingsModal').classList.remove('open');
+  xScore=0;oScore=0;draws=0;
+  startRound();
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='r') startRound();
+  if(e.key==='n') askReset();
+});
+
+startRound();
+</script>
+</body>
+</html>
